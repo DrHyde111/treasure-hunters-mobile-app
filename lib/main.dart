@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:treasure_hunters/login_view.dart';
+import 'package:treasure_hunters/views/login_view.dart';
 
 void main() {
   runApp(const MyApp());
