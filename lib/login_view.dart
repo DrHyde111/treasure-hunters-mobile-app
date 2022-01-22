@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'services/api_services.dart';
+
 class LoginView extends StatefulWidget {
   const LoginView({Key? key}) : super(key: key);
 
@@ -9,7 +11,13 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   bool isLoading = false;
-  Map<String, String> credentials = {};
+
+  final _formKey = GlobalKey<FormState>();
+  final email = TextEditingController();
+  final password = TextEditingController();
+
+  String errorMessage = '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,6 +40,7 @@ class _LoginViewState extends State<LoginView> {
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Form(
+                    key: _formKey,
                     child: Column(
                       children: [
                         const Text(
@@ -39,22 +48,54 @@ class _LoginViewState extends State<LoginView> {
                           style: TextStyle(fontSize: 30),
                         ),
                         TextFormField(
-                          onChanged: (value) => {
-                            credentials['email'] = value,
+                          controller: email,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'This field cannot be empty!';
+                            }
+                            return null;
                           },
                           decoration: const InputDecoration(
                               hintText: 'Enter your email'),
                         ),
                         TextFormField(
-                          onChanged: (value) => {
-                            credentials['password'] = value,
+                          controller: password,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'This field cannot be empty!';
+                            }
+                            return null;
                           },
                           decoration: const InputDecoration(
                               hintText: 'Enter your password'),
                         ),
                         ElevatedButton(
-                            onPressed: () => {print(credentials)},
-                            child: const Text("Login"))
+                            onPressed: () async {
+                              setState(() {
+                                errorMessage = '';
+                              });
+                              var response;
+                              if (_formKey.currentState!.validate()) {
+                                try {
+                                  response =
+                                      await login(email.text, password.text);
+                                } catch (error) {
+                                  setState(() {
+                                    errorMessage = error.toString();
+                                  });
+                                }
+                              }
+                            },
+                            child: const Text("Login")),
+                        errorMessage != ''
+                            ? Card(
+                                color: Colors.redAccent,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(errorMessage.toString()),
+                                ),
+                              )
+                            : const Text('')
                       ],
                     ),
                   ),
