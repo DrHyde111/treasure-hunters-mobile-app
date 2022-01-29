@@ -34,8 +34,10 @@ class _GamesSubmenuViewState extends State<GamesSubmenuView> {
               title: Text('Games'),
             ),
             body: SafeArea(
-              child: Column(
-                children: displayGames(snapshot.data),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: displayGames(snapshot.data),
+                ),
               ),
             ),
           );
