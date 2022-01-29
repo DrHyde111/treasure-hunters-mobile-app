@@ -30,17 +30,25 @@ class _GamesSubmenuViewState extends State<GamesSubmenuView> {
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Scaffold(
-            appBar: AppBar(
-              title: Text('Games'),
-            ),
-            body: SafeArea(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: displayGames(snapshot.data),
+              appBar: AppBar(
+                title: const Text('Games'),
+              ),
+              body: SafeArea(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: displayGames(snapshot.data),
+                  ),
                 ),
               ),
-            ),
-          );
+              bottomNavigationBar: BottomAppBar(
+                child: TextButton(
+                  onPressed: () {},
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [Icon(Icons.add), Text("Create game")],
+                  ),
+                ),
+              ));
         } else if (snapshot.hasError) {
           return Text('${snapshot.error}');
         }
