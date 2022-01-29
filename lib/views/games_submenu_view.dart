@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:treasure_hunters/models/game.dart';
 import 'package:treasure_hunters/services/api_services.dart';
+import 'package:treasure_hunters/views/create_game_view.dart';
 import 'package:treasure_hunters/views/partial_widgets/submenu_tile.dart';
 
 import 'game_info_view.dart';
@@ -42,7 +43,14 @@ class _GamesSubmenuViewState extends State<GamesSubmenuView> {
               ),
               bottomNavigationBar: BottomAppBar(
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => CreateGameView(
+                                  token: widget.token,
+                                )));
+                  },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [Icon(Icons.add), Text("Create game")],
