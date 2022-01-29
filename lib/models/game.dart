@@ -1,7 +1,7 @@
 import 'package:treasure_hunters/models/point.dart';
 
 class Game {
-  int _id;
+  String _id;
   String description;
   String creator;
   List<Point> points;
@@ -12,5 +12,6 @@ class Game {
       : _id = json['_id'],
         description = json['description'],
         creator = json['creator'],
-        points = json['points'];
+        points = List<Point>.from(
+            json['points'].map((point) => Point.fromJson(point)));
 }
