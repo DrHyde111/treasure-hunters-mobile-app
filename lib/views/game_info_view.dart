@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:treasure_hunters/models/game.dart';
+import 'package:treasure_hunters/views/play_game_view.dart';
 
 class GameInfoView extends StatefulWidget {
   const GameInfoView({Key? key, required this.token, required this.game})
@@ -59,6 +60,17 @@ class _GameInfoViewState extends State<GameInfoView> {
                 style:
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
               ),
+              Center(
+                child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => PlayGameView(
+                                  token: widget.token, game: widget.game)));
+                    },
+                    child: const Text('Start Game')),
+              )
             ],
           ),
         ),
