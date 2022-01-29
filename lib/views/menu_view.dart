@@ -25,13 +25,8 @@ class MenuView extends StatelessWidget {
                                 token: token,
                               )));
                 },
-                child: const Card(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-                    child: SubmenuTile(
-                      label: 'Games',
-                    ),
-                  ),
+                child: const SubmenuTile(
+                  label: 'Games',
                 ))
           ],
         ),
