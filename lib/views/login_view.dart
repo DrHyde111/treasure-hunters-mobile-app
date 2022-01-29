@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:treasure_hunters/views/menu_view.dart';
 
 import '../services/api_services.dart';
+
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({Key? key}) : super(key: key);
@@ -79,6 +82,16 @@ class _LoginViewState extends State<LoginView> {
                                 try {
                                   response =
                                       await login(email.text, password.text);
+                                  const storage = FlutterSecureStorage();
+                                  await storage.write(
+                                      key: 'token', value: response['token']);
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            MenuView(token: response['token'])),
+                                    (Route<dynamic> route) => false,
+                                  );
                                 } catch (error) {
                                   setState(() {
                                     errorMessage = error.toString();
