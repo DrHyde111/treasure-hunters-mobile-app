@@ -63,6 +63,7 @@ class _LoginViewState extends State<LoginView> {
                         ),
                         TextFormField(
                           controller: password,
+                          obscureText: true,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'This field cannot be empty!';
