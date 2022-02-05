@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
 import 'package:treasure_hunters/models/game.dart';
 import 'package:treasure_hunters/views/game_won_view.dart';
 
@@ -15,13 +18,16 @@ class PlayGameView extends StatefulWidget {
 }
 
 class _PlayGameViewState extends State<PlayGameView> {
-  LatLng currentPosition = const LatLng(49.688919, 19.200649);
+  LatLng currentQuestPosition = const LatLng(49.688919, 19.200649);
   String ErrorMessage = '';
   bool questPanelActive = false;
-  int activePointIndex = 0;
+  int activeQuestPointIndex = 0;
+  Location location = Location();
+  Set<Marker> _markers = {};
 
   late GoogleMapController _googleMapController;
-  late Marker currentPoint;
+  late Marker currentQuestPointMarker;
+  late Marker currentPlayerPositionMarker;
 
   void dispose() {
     _googleMapController.dispose();
@@ -32,12 +38,19 @@ class _PlayGameViewState extends State<PlayGameView> {
   void initState() {
     super.initState();
     if (widget.game.points.isNotEmpty) {
-      currentPosition = LatLng(double.parse(widget.game.points[0].latitude),
+      currentQuestPosition = LatLng(
+          double.parse(widget.game.points[0].latitude),
           double.parse(widget.game.points[0].longitude));
-      currentPoint = Marker(
+      currentQuestPointMarker = Marker(
           markerId: const MarkerId("Current quest"),
-          position: currentPosition,
+          position: currentQuestPosition,
           infoWindow: const InfoWindow(title: "Current quest location"));
+      _markers.add(currentQuestPointMarker);
+      print(_markers);
+      goToPlayerCurrentPosition();
+      setState(() {
+        setPlayerMarker();
+      });
     } else {
       ErrorMessage = "Game has no points!";
     }
@@ -54,10 +67,10 @@ class _PlayGameViewState extends State<PlayGameView> {
             ? !questPanelActive
                 ? GoogleMap(
                     initialCameraPosition:
-                        CameraPosition(target: currentPosition, zoom: 15),
+                        CameraPosition(target: currentQuestPosition, zoom: 15),
                     onMapCreated: (controller) =>
                         _googleMapController = controller,
-                    markers: {currentPoint},
+                    markers: _markers,
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -66,7 +79,8 @@ class _PlayGameViewState extends State<PlayGameView> {
                         children: [
                           Expanded(
                             child: Text(
-                              widget.game.points[activePointIndex].question,
+                              widget
+                                  .game.points[activeQuestPointIndex].question,
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: 25),
                             ),
@@ -84,6 +98,13 @@ class _PlayGameViewState extends State<PlayGameView> {
                 ],
               ),
       ),
+      floatingActionButton: questPanelActive == false
+          ? FloatingActionButton(
+              onPressed: goToPlayerCurrentPosition,
+              child: Icon(Icons.person_pin),
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       bottomNavigationBar: BottomAppBar(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -100,9 +121,34 @@ class _PlayGameViewState extends State<PlayGameView> {
             ElevatedButton(
                 onPressed: questPanelActive != true
                     ? () {
-                        setState(() {
-                          questPanelActive = true;
-                        });
+                        if (isPlayerCloseEnough() == false) {
+                          setState(() {
+                            questPanelActive = true;
+                          });
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 10, horizontal: 20),
+                                child:
+                                    const Text('Too far from quest location'),
+                              ),
+                              duration: const Duration(milliseconds: 1500),
+                              width: 280.0,
+                              // Width of the SnackBar.
+                              padding: const EdgeInsets.symmetric(
+                                horizontal:
+                                    8.0, // Inner padding for SnackBar content.
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
                       }
                     : null,
                 child: Text("Quest"))
@@ -115,7 +161,7 @@ class _PlayGameViewState extends State<PlayGameView> {
   List<Widget> displayOptions() {
     List<Widget> result = [];
     int index = 1;
-    for (var element in widget.game.points[activePointIndex].answers) {
+    for (var element in widget.game.points[activeQuestPointIndex].answers) {
       result.add(
         Row(
           children: [
@@ -123,17 +169,43 @@ class _PlayGameViewState extends State<PlayGameView> {
                 child: ElevatedButton(
                     onPressed: () {
                       if (checkIfCorrect(
-                              widget
-                                  .game.points[activePointIndex].correctAnswer,
+                              widget.game.points[activeQuestPointIndex]
+                                  .correctAnswer,
                               element) ==
                           true) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 20),
+                              child: const Text('Correct answer'),
+                            ),
+                            duration: const Duration(milliseconds: 1500),
+                            width: 280.0,
+                            // Width of the SnackBar.
+                            padding: const EdgeInsets.symmetric(
+                              horizontal:
+                                  8.0, // Inner padding for SnackBar content.
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
                         return proceedToNextQuest();
                       }
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: const Text('Error answer try again'),
+                          content: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 20),
+                            child: const Text('Error answer try again'),
+                          ),
                           duration: const Duration(milliseconds: 1500),
-                          width: 280.0, // Width of the SnackBar.
+                          width: 280.0,
+                          // Width of the SnackBar.
                           padding: const EdgeInsets.symmetric(
                             horizontal:
                                 8.0, // Inner padding for SnackBar content.
@@ -164,7 +236,7 @@ class _PlayGameViewState extends State<PlayGameView> {
 
   void proceedToNextQuest() {
     setState(() {
-      if (activePointIndex == widget.game.points.length - 1) {
+      if (activeQuestPointIndex == widget.game.points.length - 1) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
@@ -173,14 +245,57 @@ class _PlayGameViewState extends State<PlayGameView> {
         );
       }
       questPanelActive = false;
-      activePointIndex++;
-      currentPosition = LatLng(
-          double.parse(widget.game.points[activePointIndex].latitude),
-          double.parse(widget.game.points[activePointIndex].longitude));
-      currentPoint = Marker(
+      activeQuestPointIndex++;
+      currentQuestPosition = LatLng(
+          double.parse(widget.game.points[activeQuestPointIndex].latitude),
+          double.parse(widget.game.points[activeQuestPointIndex].longitude));
+      currentQuestPointMarker = Marker(
           markerId: const MarkerId("Current quest"),
-          position: currentPosition,
+          position: currentQuestPosition,
           infoWindow: const InfoWindow(title: "Current quest location"));
+      _markers.removeWhere(
+          (element) => element.markerId == MarkerId("Current quest"));
+      _markers.add(currentQuestPointMarker);
     });
+  }
+
+  void setPlayerMarker() async {
+    location.onLocationChanged.listen((LocationData loc) {
+      currentPlayerPositionMarker = Marker(
+          markerId: MarkerId('Player'),
+          position: LatLng(loc.latitude ?? 0.0, loc.longitude ?? 0.0),
+          infoWindow: const InfoWindow(title: "Your current location"));
+      _markers.removeWhere((element) => element.markerId == MarkerId('Player'));
+      setState(() {
+        _markers.add(currentPlayerPositionMarker);
+      });
+    });
+  }
+
+  void goToPlayerCurrentPosition() async {
+    var currentLocation = await location.getLocation();
+    _googleMapController
+        .animateCamera(CameraUpdate.newCameraPosition(new CameraPosition(
+      target: LatLng(
+          currentLocation.latitude ?? 0.0, currentLocation.longitude ?? 0.0),
+      zoom: 12.0,
+    )));
+  }
+
+  bool isPlayerCloseEnough() {
+    return calculateDistance(
+            currentPlayerPositionMarker.position.latitude,
+            currentPlayerPositionMarker.position.longitude,
+            currentQuestPosition.latitude,
+            currentQuestPosition.longitude) >
+        0.05;
+  }
+
+  double calculateDistance(lat1, lon1, lat2, lon2) {
+    var p = 0.017453292519943295;
+    var a = 0.5 -
+        cos((lat2 - lat1) * p) / 2 +
+        cos(lat1 * p) * cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2;
+    return 12742 * asin(sqrt(a));
   }
 }
